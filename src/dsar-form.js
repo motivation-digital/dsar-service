@@ -1,3 +1,4 @@
+sha: 6aba0811ab6247bdd65d94efb8c61cb9c868cf88
 // Trust Center — DSAR Contact Form
 import { EmailMessage } from 'cloudflare:email';
 // LCE-10000108 v7
@@ -495,7 +496,7 @@ export async function handleDsarSubmit(request, db, facts, ctx, turnstileSecret 
     try {
       const tv = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ secret: turnstileSecret, response: token, remoteip: ip }) });
       const td = await tv.json();
-      if (!td.success) return { success: false, errors: { _form: 'Security check failed. Please refresh and try again.' }, values: { name, email, request_type: reqType, jurisdiction, message } };
+      if (!td.success) return { success: false, errors: { _form: 'Security check failed [' + (td['error-codes']||[]).join(',') + ']. Please refresh and try again.' }, values: { name, email, request_type: reqType, jurisdiction, message } };
     } catch { return { success: false, errors: { _form: 'Security check unavailable. Please try again.' }, values: { name, email, request_type: reqType, jurisdiction, message } }; }
   }
 
