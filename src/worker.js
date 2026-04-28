@@ -44,7 +44,8 @@ export default {
           const result = await handleDsarSubmit(
             request, env.DB, facts, ctx,
             turnstileSecret,
-            env.SEND_EMAIL || null
+            env.SEND_EMAIL || null,
+            env.DKIM_PRIVATE_KEY || null
           );
           if (!result.success) return html(renderDsarPage(facts, result.errors, result.values));
           return new Response(null, { status: 303, headers: { Location: '/trust-center/contact?submitted=1' } });
