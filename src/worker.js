@@ -16,13 +16,20 @@ function renderNotConfigured(host) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Not configured</title></head><body style="font-family:sans-serif;background:#0A0A0A;color:#E5E5E5;padding:60px;text-align:center"><p style="color:#F59F0A">Not configured: ${h}</p></body></html>`;
 }
 
+// Secrets Store bindings expose a .get() method; secret_text bindings are plain strings.
+async function resolveSecret(binding) {
+  if (!binding) return null;
+  if (typeof binding.get === 'function') return await binding.get();
+  return binding;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const host = getHost(request);
 
     if (url.pathname === '/health') {
-      return new Response(JSON.stringify({ status: 'ok', worker: 'dsar-service', version: '1.0.0' }), {
+      return new Response(JSON.stringify({ status: 'ok', worker: 'dsar-service', version: '1.0.1' }), {
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
       });
     }
@@ -33,9 +40,10 @@ export default {
         if (!facts) return html(renderNotConfigured(host), 404);
 
         if (request.method === 'POST') {
+          const turnstileSecret = await resolveSecret(env.TURNSTILE_SECRET);
           const result = await handleDsarSubmit(
             request, env.DB, facts, ctx,
-            env.TURNSTILE_SECRET || null,
+            turnstileSecret,
             env.SEND_EMAIL || null
           );
           if (!result.success) return html(renderDsarPage(facts, result.errors, result.values));
