@@ -1,4 +1,3 @@
-sha: 6aba0811ab6247bdd65d94efb8c61cb9c868cf88
 // Trust Center — DSAR Contact Form
 import { EmailMessage } from 'cloudflare:email';
 // LCE-10000108 v7
