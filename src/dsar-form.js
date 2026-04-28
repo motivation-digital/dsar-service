@@ -162,7 +162,7 @@ async function addDkimSignature(raw, dkimKeyB64) {
 async function sendEmail(binding, toEmail, fromEmail, fromName, subject, htmlBody, replyTo = null, dkimKey = null) {
   if (!binding) { console.error('Email send error: no SEND_EMAIL binding'); return; }
   try {
-      const raw = [
+      let raw = [
       'MIME-Version: 1.0',
       `From: ${fromName} <${fromEmail}>`,
       `To: ${toEmail}`,
