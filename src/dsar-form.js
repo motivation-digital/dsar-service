@@ -307,7 +307,7 @@ h1,h2,h3,p{margin:0}a{text-decoration:none;color:inherit}
   .footer-right{text-align:left}
 }
 </style>
-<script>function onTurnstileSuccess(){var b=document.getElementById("dsar-submit");if(b){b.disabled=false;b.style.opacity="";b.style.cursor="";}}</script>
+<script>(function(){var done=false;function chk(){var n=document.getElementById("dsar-name"),e=document.getElementById("dsar-email"),j=document.getElementById("dsar-jurisdiction"),t=document.getElementById("dsar-type"),b=document.getElementById("dsar-submit");if(!b)return;var ok=done&&n&&n.value.trim()&&e&&e.value.trim()&&j&&j.value&&t&&t.value;b.disabled=!ok;b.style.opacity=ok?"":"0.5";b.style.cursor=ok?"":"not-allowed";}window.onTurnstileSuccess=function(){done=true;chk();};["dsar-name","dsar-email","dsar-jurisdiction","dsar-type"].forEach(function(id){var el=document.getElementById(id);if(el){el.addEventListener("input",chk);el.addEventListener("change",chk);}});}());</script>
 </head>
 <body>
 <nav class="topbar">
@@ -495,7 +495,7 @@ export async function handleDsarSubmit(request, db, facts, ctx, turnstileSecret 
     try {
       const tv = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ secret: turnstileSecret, response: token, remoteip: ip }) });
       const td = await tv.json();
-      if (!td.success) return { success: false, errors: { _form: 'Turnstile failed [' + (td['error-codes']||[]).join(',') + ']' }, values: { name, email, request_type: reqType, jurisdiction, message } };
+      if (!td.success) return { success: false, errors: { _form: 'Security verification failed. Please refresh the page and try again.' }, values: { name, email, request_type: reqType, jurisdiction, message } };
     } catch { return { success: false, errors: { _form: 'Security check unavailable. Please try again.' }, values: { name, email, request_type: reqType, jurisdiction, message } }; }
   }
 
