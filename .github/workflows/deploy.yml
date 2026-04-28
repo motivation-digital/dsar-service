@@ -1,0 +1,65 @@
+name: Deploy to Cloudflare Workers
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+env:
+  CF_ACCOUNT_ID: "681f0c5e92719198aa9688776079097e"
+  WORKER_NAME: "dsar-service"
+  D1_DB_ID: "b444ddfb-b745-4ad3-abfb-57e9088f34a1"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Bundle worker with esbuild
+        run: |
+          npx --yes esbuild@latest src/worker.js \
+            --bundle \
+            --format=esm \
+            --target=es2022 \
+            --outfile=dist/worker.js \
+            --external:cloudflare:email
+          echo "Bundle size: $(wc -c < dist/worker.js) bytes"
+
+      - name: Deploy worker via Cloudflare API
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          cat > /tmp/metadata.json << 'METAEOF'
+          {"main_module":"worker.js","compatibility_date":"2026-04-01","keep_bindings":["secret_text","secrets_store_secret"],"bindings":[{"type":"d1","name":"DB","id":"b444ddfb-b745-4ad3-abfb-57e9088f34a1"},{"type":"send_email","name":"SEND_EMAIL"}]}
+          METAEOF
+          HTTP_CODE=$(curl -s -w "%{http_code}" -o /tmp/cf-resp.json -X PUT \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/${WORKER_NAME}" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -F "worker.js=@dist/worker.js;type=application/javascript+module" \
+            -F "metadata=@/tmp/metadata.json;type=application/json")
+          echo "HTTP $HTTP_CODE"
+          cat /tmp/cf-resp.json
+          [ "$HTTP_CODE" = "200" ] || exit 1
+
+      - name: Enable workers.dev subdomain
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          curl -sf -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/services/${WORKER_NAME}/environments/production/subdomain" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"enabled":true}'
+
+      - name: Smoke test
+        run: bash scripts/smoke-test.sh
