@@ -1,0 +1,10 @@
+name = "dsar-service"
+main = "src/worker.js"
+compatibility_date = "2026-04-01"
+account_id = "681f0c5e92719198aa9688776079097e"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "trust-center-db"
+database_id = "b444ddfb-b745-4ad3-abfb-57e9088f34a1"
