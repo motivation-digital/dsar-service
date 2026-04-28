@@ -307,6 +307,7 @@ h1,h2,h3,p{margin:0}a{text-decoration:none;color:inherit}
   .footer-right{text-align:left}
 }
 </style>
+<script>function onTurnstileSuccess(){var b=document.getElementById("dsar-submit");if(b){b.disabled=false;b.style.opacity="";b.style.cursor="";}}</script>
 </head>
 <body>
 <nav class="topbar">
@@ -379,8 +380,8 @@ ${submitted ? '' : `<hr class="section-divider">
           <textarea id="dsar-message" name="message" placeholder="Optional: any additional context that will help us process your request faster">${val(values, 'message')}</textarea>
         </div>
 
-        <div class="cf-turnstile" data-sitekey="0x4AAAAAADD48HKN-TZKACHD" data-theme="dark" style="margin-bottom:14px"></div>
-        <button type="submit" class="submit-btn">
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADD48HKN-TZKACHD" data-theme="dark" data-callback="onTurnstileSuccess" style="margin-bottom:14px"></div>
+        <button type="submit" id="dsar-submit" class="submit-btn" disabled style="opacity:0.5;cursor:not-allowed">
           Submit request
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
