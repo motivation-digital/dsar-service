@@ -527,11 +527,11 @@ export async function handleDsarSubmit(request, db, facts, ctx, turnstileSecret 
 
   const emailWork = Promise.all([
     dpoEmail ? sendEmail(
-      sendEmailBinding, dpoEmail, fromEmail, `${brandName} Trust Center`,
-      `New DSAR — ${esc(domain)}: ${reqLabel} from ${name}`,
+      sendEmailBinding, dpoEmail, fromEmail, "Trust Center",
+      `New DSAR — ${reqLabel} from ${name}`,
       `<!DOCTYPE html><html><body style="font-family:sans-serif;background:#0A0A0A;color:#FAFAFA;padding:32px">
 <div style="max-width:560px;margin:0 auto;background:#111111;border:1px solid rgba(245,159,10,0.2);border-radius:12px;padding:28px">
-<p style="color:#F59F0A;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin:0 0 16px">New Request — ${esc(brandName)}</p>
+<p style="color:#F59F0A;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin:0 0 16px">New DSAR Request</p>
 <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:20px">
   <tr><td style="color:rgba(255,255,255,0.5);padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.07);width:40%">Request type</td><td style="padding:8px 0 8px 12px;border-bottom:1px solid rgba(255,255,255,0.07);font-weight:500">${esc(reqLabel)}</td></tr>
   <tr><td style="color:rgba(255,255,255,0.5);padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.07)">Jurisdiction</td><td style="padding:8px 0 8px 12px;border-bottom:1px solid rgba(255,255,255,0.07);font-weight:500">${esc(jurisdictionInfo.label)}</td></tr>
@@ -545,8 +545,8 @@ ${message ? `<div style="background:#0A0A0A;border-radius:8px;padding:14px;font-
     ) : Promise.resolve(),
 
     sendEmail(
-      sendEmailBinding, email, fromEmail, domain,
-      `Action required — your ${domain} request`,
+      sendEmailBinding, email, fromEmail, "Trust Center",
+      `Action required — your ${esc(reqLabel)}`,
       `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#0A0A0A;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
 <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#0A0A0A">
@@ -554,8 +554,6 @@ ${message ? `<div style="background:#0A0A0A;border-radius:8px;padding:14px;font-
 <table width="560" cellpadding="0" cellspacing="0" role="presentation" style="max-width:560px;width:100%">
 <tr><td style="padding-bottom:24px">
   <span style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:#F59F0A">TRUSTCENTER.PRO</span>
-  <span style="font-size:12px;color:rgba(255,255,255,0.3);margin:0 8px">&middot;</span>
-  <span style="font-size:12px;color:rgba(255,255,255,0.4)">${esc(brandName)}</span>
 </td></tr>
 <tr><td style="background:#111111;border:1px solid rgba(245,159,10,0.22);border-radius:14px;padding:36px 36px 28px">
   <div style="display:inline-block;background:rgba(245,159,10,0.1);border:1px solid rgba(245,159,10,0.3);border-radius:100px;padding:5px 14px;margin-bottom:24px">
@@ -566,7 +564,7 @@ ${message ? `<div style="background:#0A0A0A;border-radius:8px;padding:14px;font-
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#0A0A0A;border:1px solid rgba(245,159,10,0.4);border-radius:10px;margin-bottom:28px">
     <tr><td style="padding:20px 22px">
       <p style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#F59F0A;margin:0 0 10px">Verify your identity</p>
-      <p style="font-size:14px;color:#FAFAFA;line-height:1.6;margin:0 0 10px"><strong>Reply to this email</strong> from the address you used when you signed up with ${esc(brandName)}.</p>
+      <p style="font-size:14px;color:#FAFAFA;line-height:1.6;margin:0 0 10px"><strong>Reply to this email</strong> from the address you used when you signed up with us.</p>
       <p style="font-size:13px;color:#94A3B8;line-height:1.55;margin:0">If you registered with a different address, please reply from that address and include your full name. We cannot begin processing until we have confirmed you are the account holder.</p>
     </td></tr>
   </table>
