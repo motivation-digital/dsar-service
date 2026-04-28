@@ -138,13 +138,17 @@ export async function getFacts(db, brand_id) {
       'SELECT overall_status, overall_color, last_review, dsar_response, encryption, open_incidents, cookie_count, regulatory_authority FROM trust_status WHERE brand_id = ?'
     ).bind(brand_id).first();
     if (trust) {
+      const dsarRow = await db.prepare(
+        'SELECT COUNT(*) as cnt FROM dsar_requests WHERE brand_id = ?'
+      ).bind(brand_id).first();
+      const dsarCount = dsarRow?.cnt ?? 0;
       resolved.compliance = {
         overall_status: trust.overall_status,
         overall_color: trust.overall_color,
         last_review: trust.last_review,
         dsar_response: trust.dsar_response,
         encryption: trust.encryption,
-        open_incidents: trust.open_incidents,
+        open_incidents: dsarCount > 0 ? String(dsarCount) : 'None',
         cookie_count: trust.cookie_count,
         regulatory_authority: trust.regulatory_authority,
       };
