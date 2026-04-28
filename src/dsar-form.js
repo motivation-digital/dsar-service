@@ -341,7 +341,7 @@ ${submitted ? '' : `<hr class="section-divider">
       <h2 class="form-h2">Submit your request</h2>
       <p class="form-sub">Complete the form below. We respond to all requests personally within the timeframe required by your jurisdiction&rsquo;s data protection law.</p>
 
-      ${hasErrors ? '<div class="error-banner">Please correct the highlighted fields below.</div>' : ''}
+      ${hasErrors ? '<div class="error-banner">' + (errors._form || 'Please correct the highlighted fields below.') + '</div>' : ''}
 
       <form method="POST" action="/trust-center/contact" novalidate>
         <div class="field${errors.name ? ' has-error' : ''}">
@@ -495,7 +495,7 @@ export async function handleDsarSubmit(request, db, facts, ctx, turnstileSecret 
     try {
       const tv = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ secret: turnstileSecret, response: token, remoteip: ip }) });
       const td = await tv.json();
-      if (!td.success) return { success: false, errors: { _form: 'Security check failed [' + (td['error-codes']||[]).join(',') + ']. Please refresh and try again.' }, values: { name, email, request_type: reqType, jurisdiction, message } };
+      if (!td.success) return { success: false, errors: { _form: 'Turnstile failed [' + (td['error-codes']||[]).join(',') + ']' }, values: { name, email, request_type: reqType, jurisdiction, message } };
     } catch { return { success: false, errors: { _form: 'Security check unavailable. Please try again.' }, values: { name, email, request_type: reqType, jurisdiction, message } }; }
   }
 
