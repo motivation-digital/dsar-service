@@ -123,7 +123,43 @@ function renderFooter(facts) {
 </footer>`;
 }
 
-async function sendEmail(binding, toEmail, fromEmail, fromName, subject, htmlBody, replyTo = null) {
+async function addDkimSignature(raw, dkimKeyB64) {
+  const CRLF = '\r\n';
+  const splitAt = raw.indexOf(CRLF + CRLF);
+  const headerPart = raw.substring(0, splitAt);
+  const bodyPart = raw.substring(splitAt + 4);
+
+  // Simple body canonicalization
+  const canonBody = bodyPart.replace(/(\r\n)*$/, '') + CRLF;
+  const bodyHashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonBody));
+  const bodyHash = btoa(String.fromCharCode(...new Uint8Array(bodyHashBuf)));
+
+  // Parse headers into map
+  const headerMap = {};
+  for (const line of headerPart.split(CRLF)) {
+    const m = line.match(/^([^:]+):\s*(.*)/);
+    if (m) headerMap[m[1].toLowerCase()] = m[2];
+  }
+
+  const h = ['from', 'to', 'subject'].filter(k => headerMap[k]);
+  const now = Math.floor(Date.now() / 1000);
+  const dkimVal = `v=1; a=rsa-sha256; d=trustcenter.pro; s=mail; c=relaxed/simple; h=${h.join(':')}; bh=${bodyHash}; t=${now}; b=`;
+
+  // Relaxed header canonicalization
+  const canonHeaders = h.map(k => `${k}:${headerMap[k].replace(/\s+/g,' ').trim()}`).join(CRLF);
+  const toSign = canonHeaders + CRLF + 'dkim-signature:' + dkimVal;
+
+  const pkcs8 = Uint8Array.from(atob(dkimKeyB64), c => c.charCodeAt(0));
+  const key = await crypto.subtle.importKey(
+    'pkcs8', pkcs8, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']
+  );
+  const sigBuf = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(toSign));
+  const sig = btoa(String.fromCharCode(...new Uint8Array(sigBuf)));
+
+  return `DKIM-Signature: ${dkimVal}${sig}${CRLF}${raw}`;
+}
+
+async function sendEmail(binding, toEmail, fromEmail, fromName, subject, htmlBody, replyTo = null, dkimKey = null) {
   if (!binding) { console.error('Email send error: no SEND_EMAIL binding'); return; }
   try {
       const raw = [
@@ -137,6 +173,7 @@ async function sendEmail(binding, toEmail, fromEmail, fromName, subject, htmlBod
       '',
       htmlBody,
     ].join('\r\n');
+    if (dkimKey) raw = await addDkimSignature(raw, dkimKey);
     const stream = new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(raw)); c.close(); } });
     await binding.send(new EmailMessage(fromEmail, toEmail, stream));
   } catch (e) {
@@ -473,7 +510,7 @@ document.addEventListener('click', function(e) {
 </html>`;
 }
 
-export async function handleDsarSubmit(request, db, facts, ctx, turnstileSecret = null, sendEmailBinding = null) {
+export async function handleDsarSubmit(request, db, facts, ctx, turnstileSecret = null, sendEmailBinding = null, dkimKey = null) {
   let formData;
   try {
     formData = await request.formData();
@@ -542,7 +579,7 @@ export async function handleDsarSubmit(request, db, facts, ctx, turnstileSecret 
 ${message ? `<div style="background:#0A0A0A;border-radius:8px;padding:14px;font-size:13px;color:#b8b8b8;line-height:1.6"><strong style="display:block;margin-bottom:6px;color:#FAFAFA">Details</strong>${esc(message)}</div>` : ''}
 <p style="font-size:12px;color:rgba(255,255,255,0.3);margin-top:20px;border-top:1px solid rgba(255,255,255,0.07);padding-top:14px">Respond within ${esc(responseTime)} under ${esc(jurisdLaw)} — ${esc(domain)}</p>
 </div></body></html>`
-    ) : Promise.resolve(),
+    , null, dkimKey) : Promise.resolve(),
 
     sendEmail(
       sendEmailBinding, email, fromEmail, "Trust Center",
@@ -608,7 +645,7 @@ ${message ? `<div style="background:#0A0A0A;border-radius:8px;padding:14px;font-
 </table></td></tr></table>
 </body></html>`,
       'dpo@trustcenter.pro'
-        ),
+        , null, dkimKey),
   ]).catch(() => {});
 
   if (ctx) ctx.waitUntil(emailWork);
